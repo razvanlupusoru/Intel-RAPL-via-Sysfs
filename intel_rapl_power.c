@@ -190,7 +190,7 @@ static ssize_t power_info_show(struct kobject *kobj, struct kobj_attribute *attr
 static ssize_t no_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	/* Do nothing */
-	return count;
+	return -EPERM;
 }
 
 static ssize_t power_limit_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -265,11 +265,13 @@ static ssize_t power_limit_store(struct kobject *kobj, struct kobj_attribute *at
 	
 	newval = ((mask & userinput) << offset) + (currentval & (~(mask << offset)));
 	writeerror = native_write_msr_safe((MSR_PKG_RAPL_POWER_LIMIT), (u32)((u64)(newval)), (u32)((u64)(newval) >> 32));
-	
-	#ifdef __INTEL_RAPL_POWER_DEBUG
-	if(writeerror)
+
+	if(writeerror) {
+	        #ifdef __INTEL_RAPL_POWER_DEBUG
 		printk(KERN_INFO "Intel RAPL Power Info: Writing 0x%llX to MSR_PKG_RAPL_POWER_LIMIT failed ",newval);
-	#endif
+	        #endif
+	        return (writeerror > 0 ? -writeerror : writeerror);
+	}
 	
 	return count;
 }
