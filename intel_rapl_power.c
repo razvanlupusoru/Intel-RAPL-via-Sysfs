@@ -190,7 +190,7 @@ static ssize_t power_info_show(struct kobject *kobj, struct kobj_attribute *attr
 static ssize_t no_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	/* Do nothing */
-	return count;
+	return -EPERM;
 }
 
 static ssize_t power_limit_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -265,46 +265,48 @@ static ssize_t power_limit_store(struct kobject *kobj, struct kobj_attribute *at
 	
 	newval = ((mask & userinput) << offset) + (currentval & (~(mask << offset)));
 	writeerror = native_write_msr_safe((MSR_PKG_RAPL_POWER_LIMIT), (u32)((u64)(newval)), (u32)((u64)(newval) >> 32));
-	
-	#ifdef __INTEL_RAPL_POWER_DEBUG
-	if(writeerror)
+
+	if(writeerror) {
+	        #ifdef __INTEL_RAPL_POWER_DEBUG
 		printk(KERN_INFO "Intel RAPL Power Info: Writing 0x%llX to MSR_PKG_RAPL_POWER_LIMIT failed ",newval);
-	#endif
+	        #endif
+	        return (writeerror > 0 ? -writeerror : writeerror);
+	}
 	
 	return count;
 }
 
 static struct kobj_attribute joules_attribute =
-	__ATTR(total_energy_millijoules, 0666, joules_show, no_store);
+	__ATTR(total_energy_millijoules, 0444, joules_show, no_store);
 static struct kobj_attribute watts_attribute =
-	__ATTR(current_power_milliwatts, 0666, watts_show, no_store);
+	__ATTR(current_power_milliwatts, 0444, watts_show, no_store);
 static struct kobj_attribute thermalspecpower_attribute =
-	__ATTR(thermal_spec_power_watts, 0666, power_info_show, no_store);
+	__ATTR(thermal_spec_power_watts, 0444, power_info_show, no_store);
 static struct kobj_attribute minimumpower_attribute =
-	__ATTR(minimum_power_watts, 0666, power_info_show, no_store);
+	__ATTR(minimum_power_watts, 0444, power_info_show, no_store);
 static struct kobj_attribute maximumpower_attribute =
-	__ATTR(maximum_power_watts, 0666, power_info_show, no_store);
+	__ATTR(maximum_power_watts, 0444, power_info_show, no_store);
 static struct kobj_attribute maxtimewindow_attribute =
-	__ATTR(maximum_time_window_milliseconds, 0666, power_info_show, no_store);
+	__ATTR(maximum_time_window_milliseconds, 0444, power_info_show, no_store);
 
 static struct kobj_attribute powerlimitlock_attribute =
-	__ATTR(power_limit_lock, 0666, power_limit_show, power_limit_store);
+	__ATTR(power_limit_lock, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute powerlimitone_attribute =
-	__ATTR(power_limit_1, 0666, power_limit_show, power_limit_store);
+	__ATTR(power_limit_1, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute powerlimittwo_attribute =
-	__ATTR(power_limit_2, 0666, power_limit_show, power_limit_store);
+	__ATTR(power_limit_2, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute enablelimitone_attribute =
-	__ATTR(enable_limit_1, 0666, power_limit_show, power_limit_store);
+	__ATTR(enable_limit_1, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute enablelimittwo_attribute =
-	__ATTR(enable_limit_2, 0666, power_limit_show, power_limit_store);
+	__ATTR(enable_limit_2, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute clampinglimitone_attribute =
-	__ATTR(clamping_limit_1, 0666, power_limit_show, power_limit_store);
+	__ATTR(clamping_limit_1, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute clampinglimittwo_attribute =
-	__ATTR(clamping_limit_2, 0666, power_limit_show, power_limit_store);
+	__ATTR(clamping_limit_2, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute timewindowpowerlimitone_attribute =
-	__ATTR(time_window_power_limit_1, 0666, power_limit_show, power_limit_store);
+	__ATTR(time_window_power_limit_1, 0644, power_limit_show, power_limit_store);
 static struct kobj_attribute timewindowpowerlimittwo_attribute =
-	__ATTR(time_window_power_limit_2, 0666, power_limit_show, power_limit_store);
+	__ATTR(time_window_power_limit_2, 0644, power_limit_show, power_limit_store);
 
 static struct attribute *attrs[] = {
 	&joules_attribute.attr,
